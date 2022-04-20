@@ -4,6 +4,7 @@ import com.example.batch.lib.JobCompletionNotificationListener;
 import com.example.batch.lib.PersonItemProcessor;
 import com.example.batch.model.Person;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -14,15 +15,16 @@ import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourc
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileParseException;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
-import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.sql.DataSource;
 
+@Slf4j
 @Configuration
 @EnableBatchProcessing
 @RequiredArgsConstructor
@@ -100,6 +102,9 @@ public class BatchConfiguration {
                 // 이것은 처리의 각 청크의 입력 및 출력 유형을 나타내며 ItemReader<Person> 및 ItemWriter<Person>과 함께 정렬된다.
                 .<Person, Person> chunk(10)
                 .reader(reader())
+                .faultTolerant()
+                .skip(FlatFileParseException.class)
+                .skipLimit(3)
                 .processor(processor())
                 .writer(writer)
                 .build();
